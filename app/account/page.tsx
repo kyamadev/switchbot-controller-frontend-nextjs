@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateUser } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function AccountPage() {
+  useAuth(); // ログインしていない場合はリダイレクト
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [switchbotToken, setSwitchbotToken] = useState('');

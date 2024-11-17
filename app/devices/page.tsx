@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getDevices, controlDevice } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function DevicesPage() {
+	useAuth(); // ログインしていない場合はリダイレクト
+
   const [devices, setDevices] = useState<any[]>([]);
   const [error, setError] = useState('');
   const router = useRouter();
