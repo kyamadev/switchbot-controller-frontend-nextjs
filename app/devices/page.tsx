@@ -1,87 +1,56 @@
-import { useEffect, useState } from "react";
+'use client';
 
-interface Device {
-  deviceId: string;
-  deviceName: string;
-}
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { getDevices, controlDevice } from '../../lib/api';
 
-const DevicesPage: React.FC = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export default function DevicesPage() {
+  const [devices, setDevices] = useState<any[]>([]);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     const fetchDevices = async () => {
       try {
-        const response = await fetch("/api/devices", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`, // ログイン時に保存したトークン
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch devices: ${response.status}`);
-        }
-
-        const data: Device[] = await response.json();
+        const data = await getDevices();
         setDevices(data);
       } catch (err: any) {
-        setError(err.message || "An error occurred");
-      } finally {
-        setLoading(false);
+        setError(err.message || 'Failed to fetch devices');
       }
     };
-
     fetchDevices();
   }, []);
 
-  const handleDeviceControl = async (deviceId: string, command: string) => {
+  const handleControl = async (id: string, command: string) => {
     try {
-      const response = await fetch(`/api/devices/${deviceId}/control`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ command }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to send command");
-      }
-
-      alert("Command sent successfully");
+      await controlDevice(id, command);
+      alert('Command sent!');
     } catch (err: any) {
-      alert(err.message || "An error occurred");
+      setError(err.message || 'Failed to send command');
     }
   };
 
-  if (loading) return <div>Loading devices...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    router.push('/login');
+  };
 
   return (
     <div>
       <h1>Devices</h1>
+      <button onClick={() => router.push('/account')}>Account Settings</button>
+      <button onClick={handleLogout}>Logout</button>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       <ul>
         {devices.map((device) => (
-          <li key={device.deviceId}>
-            {device.deviceName}
-            <button
-              onClick={() => handleDeviceControl(device.deviceId, "turnOn")}
-            >
+          <li key={device.id}>
+            {device.name}
+            <button onClick={() => handleControl(device.id, 'turnOn')}>
               Turn On
-            </button>
-            <button
-              onClick={() => handleDeviceControl(device.deviceId, "turnOff")}
-            >
-              Turn Off
             </button>
           </li>
         ))}
       </ul>
     </div>
   );
-};
-
-export default DevicesPage;
+}
